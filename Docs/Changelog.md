@@ -1,5 +1,126 @@
 OpenCore Changelog
 ==================
+#### v0.7.8
+- Updated ocvalidate to warn about insecure `DmgLoading` with secure `SecureBootModel` (already disallowed in runtime)
+- Fixed AudioDxe not disabling unused channels after recent updates
+- Allow gain to track OS volume on old macOS without `SystemAudioVolumeDB`
+- Fixed crash on no mouse support when verifying password
+- Fixed AppleInternal CSR bit being set with `ProvideCustomSlide` enabled
+- Added support for `.contentFlavour` and `.contentDetails` files for boot entry protocol entries including OpenLinuxBoot
+- Added `LINUX_BOOT_ADD_RW` flag to OpenLinuxBoot to support e.g. EndeavourOS
+- Added `flags+=` and `flags-=` arguments to OpenLinuxBoot to simplify setting driver flags if needed
+- Fixed OpenLinuxBoot entry name disambiguation when `LINUX_BOOT_USE_LATEST` flag is clear
+- Updated builtin firmware versions for SMBIOS and the rest
+- Fixed crash in OpenLinuxBoot with partly (re-)installed Linux distro
+- Improved robustness in malformed PE image file parsing
+
+#### v0.7.7
+- Fixed rare crash caused by register corruption in the entry point
+- Added `ProvideCurrentCpuInfo` support for Intel Alder Lake
+- Fixed typo in `Cpuid1Data` recommendations for Intel Rocket Lake and newer
+- Updated builtin firmware versions for SMBIOS and the rest
+- Updated underlying EDK II package to edk2-stable202111
+- Resolved crashes in QEMU with AudioDxe
+- Added AudioDxe settings caching (avoids non-needed setup delays)
+- Added DisconnectHda quirk to allow UEFI sound on Apple hardware and others
+- Added workarounds for bugs in QEMU `intel-hda` driver to allow UEFI sound in QEMU
+- Implemented multi-channel (e.g. bass+main speaker; speakers+headphones) UEFI sound with `AudioOutMask`
+- Fixed AudioDxe startup stalls when Nvidia HDA audio is present
+- Resolved AudioDxe disabling sound in Windows on some firmware
+- Added pointer polling period tuning in the builtin AppleEvent implementation
+- Added pointer device list tuning in the builtin AppleEvent implementation
+- Added VREF handling to support UEFI sound on more Apple hardware
+- Updated audio output channel detection to support UEFI sound on more Apple hardware
+- Added manual GPIO config (use `--gpio-setup` AudioDxe driver argument for UEFI sound on Apple hardware)
+- Switched UEFI audio levels to decibel gain to allow accurate matching of saved macOS volume levels
+- Separated settings for minimum audio assist volume and minimum audible volume
+
+#### v0.7.6
+- Fixed stack canary support when compiling with GCC
+- Added automatic scaling factor detection
+- Explicitly restricted `ResizeAppleGpuBars` to 0 and -1
+- Fixed OpenCanopy long labels fade-out over graphics background
+- Fixed `ProvideConsoleGop` not disabling blit-only modes (e.g. on Z690)
+- Fixed Alder Lake SMBIOS CPU model information
+- Added XCPM CPU power management ACPI table for Intel Alder Lake
+- Updated draw order to avoid graphics tearing in OpenCanopy
+- Fixed handling PCI device paths with logical units in ScanPolicy
+- Added `ReconnectGraphicsOnConnect` option for enabling alternative UEFI graphics drivers
+- Added BiosVideo.efi driver to use with `ReconnectGraphicsOnConnect`
+- Changed `FadtEnableReset` to avoid unreliable keyboard controller reset
+- Added `EnableVmx` quirk to allow virtualization in other OS on some Macs
+- Upgraded `ProtectUefiServices` to prevent GRUB shim overwriting service pointers when chainloading with Secure Boot enabled
+- Removed deprecated SSDT-PNLFCFL
+- Fixed handling of zero-sized Memory Attributes Table
+
+#### v0.7.5
+- Revised OpenLinuxBoot documentation
+- Supported Linux ostree boot layout
+- Fixed external drive icons for Boot Entry Protocol
+- Added GPU Resize BAR quirks to reduce BARs on per-OS basis
+- Fixed OpenLinuxBoot hang bug after correct detection of some distros
+- Added DMG signature check during download, thx @jspraul and @zhangyoufu
+- Updated builtin firmware versions for SMBIOS and the rest
+- Updated recovery downloading commands to include macOS 11 and 12
+
+#### v0.7.4
+- Fixed Linux kernel sort order
+- Added Linux detection optional log detail
+- Fixed CPU core count detection for more legacy CPUs
+- Added ability to fully override autodetect Linux boot options
+- Added large BaseSystem support in `AdviseFeatures`
+- Updated builtin firmware versions for SMBIOS and the rest
+- Added tool to extract vendor secure boot certificate from GRUB shim file
+- Added `BridgeOSHardwareModel` NVRAM variable to fix T2 SB AP models on macOS 12
+- Changed `Default` Apple Secure Boot model to match SMBIOS for macOS 12
+- Fixed `opencore-version` not being added to NVRAM variables
+
+#### v0.7.3
+- Improved SSDT-PNLF compatibility with CFL+ graphics
+- Fixed OpenCanopy performance loss due to redrawing introduced in 0.6.9
+- Added pattern-based automatic variable initialisation for better security
+- Updated underlying EDK II package to edk2-stable202108
+- Updated Apple Secure Boot variables for `x86legacy`
+- Updated Linux variants in Flavours.md
+- Implemented Boot Entry Protocol, allowing plug-in boot entry drivers
+- Added StringBuffer and FlexArray libraries
+- Updated Drivers to support arguments (requires config.plist update, see samples)
+- Added OpenLinuxBoot driver: OC-native Linux autodetect and boot without chaining via GRUB
+- Fixed overlong boot entry names breaking text flow in builtin menu
+- Added `ForceOcWriteFlash` UEFI quirk to enable writing OC system variables
+
+#### v0.7.2
+- Fixed OSBundleLibraries/OSBundleLibaries64 handling
+- Added `GraphicsInputMirroring` to fix lost keystrokes in some non-Apple graphical UEFI apps
+- Added support for stack canaries (security cookies / stack guards)
+- Fixed unintialised memory access in AudioDxe causing audio playback failure
+- Changed `Default` Apple Secure Boot model to `x86legacy` for better security and compatibility
+- Increased default APFS `MinDate` and `MinVersion` to macOS Big Sur for better security
+- Updated builtin firmware versions for SMBIOS and the rest
+- Improved SSDT-PNLF compatibility with Windows and newer graphics
+- Fixed CLANGPDB OpenCore builds by shortening OC magic
+
+#### v0.7.1
+- Added `SyncTableIds` quirk to sync modified table OEM identifiers
+- Added CPU Info (MSRs) dumping to `SysReport`
+- Updated builtin firmware versions for SMBIOS and the rest
+- Fixed `PowerTimeoutKernelPanic` on macOS 12
+- Fixed transparency click detection on OpenCanopy boot entries
+- Added PCI device info dumping to `SysReport`
+- Fixed `SetApfsTrimTimeout` on macOS 12
+- Documented requirement for SetDefault.icns width to match Selector.icns width
+- Added explicit warn and safe fallback to builtin picker on failure to match the above
+- Added VSCode source level IDE debug config example to debug docs
+- Added other minor debug docs updates
+- Fixed incorrect timeout of built-in picker on IA32
+- Added support for custom kernels on ESP partition
+- Fixed DEBUG ASSERT on pressing change entry keys with single boot entry in OpenCanopy
+- Added recommended `Apple12` and `Windows11` flavours
+- Added `TpmInfo` tool to DEBUG TPM status
+- Fixed incorrect OpenCanopy initial display when default entry beyond right of screen
+- Fixed `ProvideCurrentCpuInfo` MSR patch on macOS 12
+- Fixed `AppleXcpmForceBoost` patch on macOS 12
+
 #### v0.7.0
 - Fixed NVRAM reset on firmware with write-protected `BootOptionSupport`
 - Improved direct GOP renderer performance for certain cases
