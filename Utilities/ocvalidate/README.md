@@ -27,7 +27,6 @@ Utility to validate whether a `config.plist` matches requirements and convention
 ### ACPI
 #### Add
 - Entry[N]->Path: Only `.aml` and `.bin` filename suffix are accepted.
-- Entry[N]->Path: If a customised DSDT is added and enabled, `RebaseRegions` in `ACPI->Quirks` should be enabled.
 
 ### Booter
 #### MmioWhitelist
@@ -50,45 +49,70 @@ Utility to validate whether a `config.plist` matches requirements and convention
 - Entry[N]->BundlePath: Filename should have `.kext` suffix.
 - Entry[N]->PlistPath: Filename should have `.plist` suffix.
 - Entry[N]: If `Lilu.kext` is used, `DisableLinkeditJettison` should be enabled in `Kernel->Quirks`.
-- For some known kexts, their `BundlePath`, `ExecutablePath`, and `PlistPath` must match against each other. Current list of rules can be found [here](https://github.com/acidanthera/OpenCorePkg/blob/master/Utilities/ocvalidate/ValidateKernel.h).
+- For some known kexts, their `BundlePath`, `ExecutablePath`, and `PlistPath` must match against each other. Current list of rules can be found [here](https://github.com/acidanthera/OpenCorePkg/blob/master/Utilities/ocvalidate/KextInfo.c).
 - Plugin kext must be placed after parent kext. For example, [plugins of Lilu](https://github.com/acidanthera/Lilu/blob/master/KnownPlugins.md) must be placed after `Lilu.kext`.
 #### Delete
 - Entry[N]->Arch: Only `Any`, `i386`, or `x86_64` are accepted.
 - Entry[N]->Identifier: At least one dot (`.`) should exist, because any identifier looks like a domain sequence (`vendor.product`).
 #### Quirks
 - `CustomSMBIOSGuid` requires `PlatformInfo->UpdateSMBIOSMode` set to `Custom`.
+- `SetApfsTrimTimeout` cannot be a value that is greater than `MAX_UINT32`, or less than `-1`.
 #### Scheme
 - KernelArch: Only `Auto`, `i386`, `i386-user32`, or `x86_64` are accepted.
 - KernelCache: Only `Auto`, `Cacheless`, `Mkext`, or `Prelinked` are accepted.
 
 ### Misc
+#### BlessOverride
+- Entries cannot be `\EFI\Microsoft\Boot\bootmgfw.efi` or `\System\Library\CoreServices\boot.efi` since OpenCore knows these paths.
 #### Boot
 - HibernateMode: Only `None`, `Auto`, `RTC`, or `NVRAM` are accepted.
 - PickerMode: Only `Builtin`, `External`, or `Apple` are accepted.
+- `PickerAudioAssist` requires `AudioSupport` in `UEFI->Audio` to be enabled.
+- LauncherOption: Only `Disabled`, `Full`, or `Short` are accepted.
+- `LauncherPath` cannot be empty string.
 #### Security
-- BootProtect: Only `None`, `Bootstrap`, or `BootstrapShort` are accepted. When set to the latter two, `RequestBootVarRouting` should be enabled in `UEFI->Quirks`.
+- AuthRestart: If enabled, `VirtualSMC.kext` should be present in `Kernel->Add`.
 - DmgLoading: Only `Disabled`, `Signed`, or `Any` are accepted.
 - Vault: Only `Optional`, `Basic`, or `Secure` are accepted.
 - SecureBootModel: Only `Default`, `Disabled`, `j137`, `j680`, `j132`, `j174`, `j140k`, `j780`, `j213`, `j140a`, `j152f`, `j160`, `j230k`, `j214k`, `j223`, `j215`, `j185`, `j185f`, or `x86legacy` are accepted.
 
 ### NVRAM
-- Requirements here all follow Global Rules.
+- Requirements here all follow Global Rules. In addition, the following keys and values are checked:
+#### gAppleBootVariableGuid (`7C436110-AB2A-4BBB-A880-FE41995C9F82`)
+- `nvda_drv` must have type `Plist Data` with the value of `0x30` or `0x31`.
+- `boot-args` must be an ASCII string (thus `Plist String`) without trailing `\0`.
+- `bootercfg` must be an ASCII string (thus `Plist String`) without trailing `\0`.
+- `csr-active-config` must have type `Plist Data` and have length of 4 bytes.
+- `StartupMute` must have type `Plist Data` and have length of 1 byte.
+- `SystemAudioVolume` must have type `Plist Data` and have length of 1 byte.
+#### gAppleVendorVariableGuid (`4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14`)
+- `UIScale` must have type `Plist Data` with the value of `0x01` or `0x02`.
+- `FirmwareFeatures` must have type `Plist Data` and have length of 4 bytes.
+- `ExtendedFirmwareFeatures` must have type `Plist Data` and have length of 8 bytes.
+- `FirmwareFeaturesMask` must have type `Plist Data` and have length of 4 bytes.
+- `ExtendedFirmwareFeatures` must have type `Plist Data` and have length of 8 bytes.
+- `DefaultBackgroundColor` must have type `Plist Data` and have length of 4 bytes. Also, its last byte must be `0x00`.
 
 ### PlatformInfo
 - UpdateSMBIOSMode: Only `TryOverwrite`, `Create`, `Overwrite`, or `Custom` are accepted.
 #### Generic
 - SystemProductName: Only real Mac models are accepted.
 - SystemMemoryStatus: Only `Auto`, `Upgradable`, or `Soldered` are accepted.
+- ProcessorType: Only known first byte can be set.
 
 ### UEFI
 #### APFS
 - When `EnableJumpstart` is enabled, `ScanPolicy` in `Misc->Security` should have `OC_SCAN_ALLOW_FS_APFS` (bit 8) set, together with `OC_SCAN_FILE_SYSTEM_LOCK` (bit 0) set. Or `ScanPolicy` should be `0` (failsafe value).
+#### Audio
+- When `AudioSupport` is enabled, AudioDevice cannot be empty and must be a valid path.
 #### Quirks
 - When `RequestBootVarRouting` is enabled, `OpenRuntime.efi` should be loaded in `UEFI->Drivers`.
 #### Drivers
 - When `OpenUsbKbDxe.efi` is in use, `KeySupport` in `UEFI->Input` should never be enabled altogether.
 - When `Ps2KeyboardDxe.efi` is in use, `KeySupport` in `UEFI->Input` should always be enabled altogether.
 - `OpenUsbKbDxe.efi` and `Ps2KeyboardDxe.efi` should never co-exist.
+- When HFS+ filesystem driver or `AudioDxe.efi` is in use, `ConnectDrivers` should be enabled altogether.
+- When `OpenCanopy.efi` is in use, `PickerMode` in `Misc->Boot` should be set to `External`.
 #### Input
 - KeySupportMode: Only `Auto`, `V1`, `V2`, or `AMI` are accepted.
 - When `PointerSupport` is enabled, the value of `PointerSupportMode` should only be `ASUS`.
